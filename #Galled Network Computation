@@ -3,40 +3,60 @@
 import timeit
 import csv
 
+var = 100
+
+fact = [-1]*var
+d_fac = [-1]*var
+func =  [ [-1] * var for _ in range(var)]
+g_net = [ [-1] * var for _ in range(var)]
+
+
+#Double Factorial
 def double_fac(n):
    
     prod = 1
 
-    for k in range(1,n+1):
-        if (n%2==0 and k%2==0) or (n%2==1 and k%2==1):
-            prod = prod*k
+    if d_fac[n] == -1:
+	    for k in range(1,n+1):
+	        if (n%2==0 and k%2==0) or (n%2==1 and k%2==1):
+	            prod = prod*k
+	    d_fac[n] = int(prod)
 
-    return(int(prod))
+    return(d_fac[n])
 
+#Factorial
 def fac(n):
 
     prod = 1
-   
-    for k in range(1,n+1):
-            prod = prod*k
 
-    return(int(prod))
+    if fact[n] == -1:
+	   
+	    for k in range(1,n+1):
+	        prod = prod*k
+	    fact[n] = int(prod)
+	            
+    return(fact[n])
 
+#Combination
 def comb(n,r):
 
     return(int(fac(n)/(fac(r)*fac(n-r))))
 
+
+#Grouped Combination
 def g_comb(n,l):
 
-    var = 1
+    lvar = 1
 
     for i in l:
 
-        var = var*comb(n,i)
+        lvar = lvar*comb(n,i)
         n = n-i
 
-    return(var)
+    return(lvar)
 
+
+#Partitioning
 def part(n, k):
     def _part(n, k, pre):
         if n <= 0:
@@ -51,24 +71,34 @@ def part(n, k):
         return ret
     return _part(n, k, n)
 
+#Compute Pyramid Networks (1-Galled) with n leaves and k ret nodes 
 def fun(n,k):
 
-    if k>n or n<0 or k<0:
-        return(0)
-   
-    elif n>=1 and k==0:
-        return(double_fac(2*n-3))
+	if (func[n][k] != -1):
+		return(func[n][k])
 
-    elif k>0:
-        k = k-1
-        if n>0:
-            val = (n+k-1)*fun(n,k) +  (k*fun(n,k-1))
-            temp = 0
-            for d in range(1,k+1):
-                temp = temp + comb(k,d)*double_fac(2*d-1)*(fun(n-d,k-d)-fun(n-d+1,k-d))
-            val = val + 0.5*temp
-        return(val)
+	if k>n or n<0 or k<0:
+		func[n][k] = 0
+	   
+	elif n>=1 and k==0:
+		func[n][k] = double_fac(2*n-3)
 
+	elif k>0:
+
+	    k = k-1
+	    if n>0:
+	        val = (n+k-1)*fun(n,k) +  (k*fun(n,k-1))
+	        temp = 0
+	        for d in range(1,k+1):
+	            temp = temp + comb(k,d)*double_fac(2*d-1)*(fun(n-d,k-d)-fun(n-d+1,k-d))
+	        val = val + 0.5*temp
+
+	    k = k+1
+	    func[n][k] = val 
+
+	return(func[n][k])
+
+#Total pyramid networks on n leaves
 def pyr_tot(n):
 
     tot = 0
@@ -86,6 +116,7 @@ def freq_count(l):
         tot = tot*fac(i)
     return(tot)
 
+#Partitions
 def partition(n,m):
 
     a = part(n,m)
@@ -96,6 +127,7 @@ def partition(n,m):
     return(l1)
 
 
+#Find possible recursive structures of galled network of depth d and m partitions
 def h(n,d,m):
 
     if d<=0:
@@ -116,44 +148,62 @@ def pyrr(n,k):
 
     return(comb(n,k)*fun(n,k))
 
+#Compute total number of galled networks
 def galled_network(n,d):
 
-    if d<=0:
-        return(0)
 
-    val = pyr_tot(n)
-    tot1 = 0
-    for i in range(2,n+1):
-        tot1 = comb(n,i)
-        tot2 = 0
-        for j in range(1,int(i/2)+1):
-            tot3 = 0
-            for k in range(j,n-i+j+1):
-                tot3 = tot3 + comb(n-i,k-j)*(1/comb(n-i+j,k))*comb(n-i+j,k)*fun(n-i+j,k)
-            tot2 = tot2 + h(i,d-1,j)*tot3
-        val = val + tot1*tot2
-        tot1 = 0
-    return(val)
+	if g_net[n][d] != -1:
+		return(g_net[n][d])
 
+	if d<=0:
+		g_net[n][d] == 0
+		return(0)
+
+	val = pyr_tot(n)
+	tot1 = 0
+	for i in range(2,n+1):
+	    tot1 = comb(n,i)
+	    tot2 = 0
+	    for j in range(1,int(i/2)+1):
+	        tot3 = 0
+	        for k in range(j,n-i+j+1):
+	            tot3 = tot3 + comb(n-i,k-j)*(1/comb(n-i+j,k))*comb(n-i+j,k)*fun(n-i+j,k)
+	        tot2 = tot2 + h(i,d-1,j)*tot3
+	    val = val + tot1*tot2
+	    tot1 = 0
+	g_net[n][d] = val
+	
+	return(g_net[n][d])
+
+	
 f1 = open("galled.csv", "w")
 f2 = open("total.csv", "w")
 n = 1
 string1 = []    
+string2 = []
 print("Begin")
 start = timeit.default_timer()
 writer = csv.writer(f1)
-for j in range(1,100):
+writer2 = csv.writer(f2)
+for j in range(1,15): #leaves
     string = []
-    for i in range(1,j+1):
-        string.append(str(int(galled_network(j,i))))
+    for i in range(1,j+1): #depth
+     	string.append(str(int(galled_network(j,i))))
+        
+    string2.append([(str(int(galled_network(j,j))))])
 
     string1.append(string)
-   
+
+    
+#print(string2)
 writer.writerows(string1)
+writer2.writerows(string2)
+
 stop = timeit.default_timer()
 
 f1.close()
 f2.close()
 
 print('Time:', stop-start)
+#print(g_net)
 
