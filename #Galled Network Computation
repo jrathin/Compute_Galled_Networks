@@ -1,0 +1,159 @@
+#Galled Network Computation
+
+import timeit
+import csv
+
+def double_fac(n):
+   
+    prod = 1
+
+    for k in range(1,n+1):
+        if (n%2==0 and k%2==0) or (n%2==1 and k%2==1):
+            prod = prod*k
+
+    return(int(prod))
+
+def fac(n):
+
+    prod = 1
+   
+    for k in range(1,n+1):
+            prod = prod*k
+
+    return(int(prod))
+
+def comb(n,r):
+
+    return(int(fac(n)/(fac(r)*fac(n-r))))
+
+def g_comb(n,l):
+
+    var = 1
+
+    for i in l:
+
+        var = var*comb(n,i)
+        n = n-i
+
+    return(var)
+
+def part(n, k):
+    def _part(n, k, pre):
+        if n <= 0:
+            return []
+        if k == 1:
+            if n <= pre:
+                return [[n]]
+            return []
+        ret = []
+        for i in range(min(pre, n), 0, -1):
+                ret += [[i] + sub for sub in _part(n-i, k-1, i)]
+        return ret
+    return _part(n, k, n)
+
+def fun(n,k):
+
+    if k>n or n<0 or k<0:
+        return(0)
+   
+    elif n>=1 and k==0:
+        return(double_fac(2*n-3))
+
+    elif k>0:
+        k = k-1
+        if n>0:
+            val = (n+k-1)*fun(n,k) +  (k*fun(n,k-1))
+            temp = 0
+            for d in range(1,k+1):
+                temp = temp + comb(k,d)*double_fac(2*d-1)*(fun(n-d,k-d)-fun(n-d+1,k-d))
+            val = val + 0.5*temp
+        return(val)
+
+def pyr_tot(n):
+
+    tot = 0
+    for i in range(n+1):
+        tot = tot + comb(n,i)*fun(n,i)
+    return(tot)
+
+
+def freq_count(l):
+
+    d = {x:l.count(x) for x in l}
+    b = list(d.values())
+    tot = 1
+    for i in b:
+        tot = tot*fac(i)
+    return(tot)
+
+def partition(n,m):
+
+    a = part(n,m)
+    l1 = []
+    for i in range(len(a)):
+        if not(1.in(a[i])):
+            l1.append(a[i])
+    return(l1)
+
+
+def h(n,d,m):
+
+    if d<=0:
+        return(0)
+
+    tot = 0
+    N = partition(n,m)
+    for i in N:
+        if not(len(N)==0):
+            tot1 = 0
+            tot1 = g_comb(n,i)*(1/freq_count(i))
+            for j in range(len(i)):
+                tot1 = tot1*galled_network(i[j],d)
+            tot = tot+tot1
+    return(tot)
+
+def pyrr(n,k):
+
+    return(comb(n,k)*fun(n,k))
+
+def galled_network(n,d):
+
+    if d<=0:
+        return(0)
+
+    val = pyr_tot(n)
+    tot1 = 0
+    for i in range(2,n+1):
+        tot1 = comb(n,i)
+        tot2 = 0
+        for j in range(1,int(i/2)+1):
+            tot3 = 0
+            for k in range(j,n-i+j+1):
+                tot3 = tot3 + comb(n-i,k-j)*(1/comb(n-i+j,k))*comb(n-i+j,k)*fun(n-i+j,k)
+            tot2 = tot2 + h(i,d-1,j)*tot3
+        val = val + tot1*tot2
+        tot1 = 0
+    return(val)
+
+f1 = open("galled.csv", "w")
+f2 = open("total.csv", "w")
+n = 1
+string1 = []    
+print("Begin")
+start = timeit.default_timer()
+writer = csv.writer(f1)
+for j in range(1,100):
+    string = []
+    for i in range(1,j+1):
+        string.append(str(int(galled_network(j,i))))
+
+    string1.append(string)
+   
+writer.writerows(string1)
+stop = timeit.default_timer()
+
+f1.close()
+f2.close()
+
+print('Time:', stop-start)
+
